@@ -8,3 +8,15 @@ This package is still in development.  It is a client wrapper for Openx3 based h
 
 At the moment this package can be installed via (subject to change):
 **go get github.com/marcsantiago/OX3-Go-API-Client/openx**
+
+Everything is still being documented, for offline access to the documentation
+use the command
+
+Generates and offline html file
+**godoc -html github.com/marcsantiago/OX3-Go-API-Client/openx > docs.html**
+
+or start a localhost version
+**godoc -http=":6060"**
+
+----------
+Contributions and Forks are welcomed :-)
