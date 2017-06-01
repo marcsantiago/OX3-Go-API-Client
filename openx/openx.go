@@ -28,10 +28,8 @@ const (
 	callBack         = "oob"
 )
 
-// Client holds all the user information, all of it is private however
+// Client holds all the user information, all of it is private however and
 // as a result only the defined methods below are used to interact with the data
-// Go doesn't provide predifined PUT, PATCH, or DELETE requests, but they can be
-// defined a number of ways.
 type Client struct {
 	domain          string
 	realm           string
@@ -45,7 +43,8 @@ type Client struct {
 	session         *http.Client
 }
 
-// Get ...
+// Get is simailiar to the normal Go *http.Client.Get
+// except string parameters can be pass in in the url or the as a map[string]interface{}
 func (c *Client) Get(url string, urlParms map[string]interface{}) (res *http.Response, err error) {
 	url = c.resolveURL(url)
 	if urlParms != nil {
@@ -72,7 +71,7 @@ func (c *Client) Get(url string, urlParms map[string]interface{}) (res *http.Res
 	return
 }
 
-// Delete ...
+// Delete creates a delete request which the Openx3 API uses, but that is not defined by Go
 func (c *Client) Delete(url string, data io.Reader) (res *http.Response, err error) {
 	request, err := http.NewRequest("DELETE", c.resolveURL(url), data)
 	if err != nil {
@@ -82,7 +81,7 @@ func (c *Client) Delete(url string, data io.Reader) (res *http.Response, err err
 	return
 }
 
-// Options ...
+// Options is a wrapper for a GET request that has the /options endpoint already passed in
 func (c *Client) Options(url string) (res *http.Response, err error) {
 	if !strings.Contains(url, "/options") {
 		url = path.Join("/options", url)
@@ -91,7 +90,7 @@ func (c *Client) Options(url string) (res *http.Response, err error) {
 	return
 }
 
-// Put ...
+// Put creates a put request which the Openx3 API uses, but that is not defined by Go
 func (c *Client) Put(url string, data io.Reader) (res *http.Response, err error) {
 	request, err := http.NewRequest("PUT", c.resolveURL(url), data)
 	if err != nil {
@@ -101,20 +100,20 @@ func (c *Client) Put(url string, data io.Reader) (res *http.Response, err error)
 	return
 }
 
-// Post ...
+// Post is a wrapper for the basic Go *http.Client.Post
 func (c *Client) Post(url string, contentType string, data io.Reader) (res *http.Response, err error) {
 	res, err = c.session.Post(c.resolveURL(url), contentType, data)
 
 	return
 }
 
-// PostForm ...
+// PostForm is a wrapper for the basic Go *http.Client.PostForm
 func (c *Client) PostForm(url string, data url.Values) (res *http.Response, err error) {
 	res, err = c.session.PostForm(c.resolveURL(url), data)
 	return
 }
 
-// LogOff ...
+// LogOff sets the created session to an empty http.Client, destorying the stored cookie
 func (c *Client) LogOff() (res *http.Response, err error) {
 	// set the session to an empty struct to clear auth information
 	c.session = &http.Client{}
@@ -185,7 +184,7 @@ func (c *Client) getAccessToken(debug bool) *oauth.AccessToken {
 	return accessToken
 }
 
-// NewClient ...
+// NewClient creates the basic Openx3 *Client via oauth1
 func NewClient(domain, realm, consumerKey, consumerSecrect, email, password string, debug bool) (*Client, error) {
 	if strings.TrimSpace(domain) == "" {
 		return &Client{}, fmt.Errorf("Domain cannot be emtpy")
