@@ -16,7 +16,15 @@ This package is still in development.  It is a client wrapper for Openx3 based h
 
 
 ## <a name="pkg-index">Index</a>
-* [func Newclient(domain, realm, consumerKey, consumerSecrect, email, password string, debug bool) (*client, error)](#Newclient)
+* [type Client](#Client)
+  * [func Newclient(domain, realm, consumerKey, consumerSecrect, email, password string, debug bool) (*Client, error)](#Newclient)
+  * [func (c *Client) Delete(url string, data io.Reader) (res *http.Response, err error)](#Client.Delete)
+  * [func (c *Client) Get(url string, urlParms map[string]interface{}) (res *http.Response, err error)](#Client.Get)
+  * [func (c *Client) LogOff() (res *http.Response, err error)](#Client.LogOff)
+  * [func (c *Client) Options(url string) (res *http.Response, err error)](#Client.Options)
+  * [func (c *Client) Post(url string, data io.Reader) (res *http.Response, err error)](#Client.Post)
+  * [func (c *Client) PostForm(url string, data url.Values) (res *http.Response, err error)](#Client.PostForm)
+  * [func (c *Client) Put(url string, data io.Reader) (res *http.Response, err error)](#Client.Put)
 
 
 #### <a name="pkg-files">Package files</a>
@@ -26,11 +34,91 @@ This package is still in development.  It is a client wrapper for Openx3 based h
 
 
 
-## <a name="Newclient">func</a> [Newclient](/src/target/openx.go?s=5315:5427#L182)
+
+## <a name="Client">type</a> [Client](/src/target/openx.go?s=611:876#L21)
 ``` go
-func Newclient(domain, realm, consumerKey, consumerSecrect, email, password string, debug bool) (*client, error)
+type Client struct {
+    // contains filtered or unexported fields
+}
 ```
-Newclient creates the basic Openx3 *client via oauth1
+Client holds all the auth data, no point in exposing it to the user though
+
+
+
+
+
+
+
+### <a name="Newclient">func</a> [Newclient](/src/target/openx.go?s=5322:5434#L182)
+``` go
+func Newclient(domain, realm, consumerKey, consumerSecrect, email, password string, debug bool) (*Client, error)
+```
+Newclient creates the basic Openx3 *Client via oauth1
+
+
+
+
+
+### <a name="Client.Delete">func</a> (\*Client) [Delete](/src/target/openx.go?s=1710:1793#L63)
+``` go
+func (c *Client) Delete(url string, data io.Reader) (res *http.Response, err error)
+```
+Delete creates a delete request
+
+
+
+
+### <a name="Client.Get">func</a> (\*Client) [Get](/src/target/openx.go?s=1021:1118#L36)
+``` go
+func (c *Client) Get(url string, urlParms map[string]interface{}) (res *http.Response, err error)
+```
+Get is simailiar to the normal Go *http.client.Get,
+except string parameters can be passed in the url or the as a map[string]interface{}
+
+
+
+
+### <a name="Client.LogOff">func</a> (\*Client) [LogOff](/src/target/openx.go?s=3146:3203#L104)
+``` go
+func (c *Client) LogOff() (res *http.Response, err error)
+```
+LogOff sets the created session to an empty http.client
+
+
+
+
+### <a name="Client.Options">func</a> (\*Client) [Options](/src/target/openx.go?s=2078:2146#L73)
+``` go
+func (c *Client) Options(url string) (res *http.Response, err error)
+```
+Options is a wrapper for a GET request that has the /options endpoint already passed in
+
+
+
+
+### <a name="Client.Post">func</a> (\*Client) [Post](/src/target/openx.go?s=2700:2781#L92)
+``` go
+func (c *Client) Post(url string, data io.Reader) (res *http.Response, err error)
+```
+Post is a wrapper for the basic Go *http.client.Post, however content type is automatically set to application/json
+
+
+
+
+### <a name="Client.PostForm">func</a> (\*Client) [PostForm](/src/target/openx.go?s=2931:3017#L98)
+``` go
+func (c *Client) PostForm(url string, data url.Values) (res *http.Response, err error)
+```
+PostForm is a wrapper for the basic Go *http.client.PostForm
+
+
+
+
+### <a name="Client.Put">func</a> (\*Client) [Put](/src/target/openx.go?s=2313:2393#L82)
+``` go
+func (c *Client) Put(url string, data io.Reader) (res *http.Response, err error)
+```
+Put creates a put request
 
 
 
