@@ -5,22 +5,23 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/marcsantiago/OX3-Go-API-Client/openx"
+	log "github.com/sirupsen/logrus"
 )
 
 // Add this data either by hard coding, from db, or environment
 // doesn't need to be defined below
-const (
-	email    = ""
-	password = ""
-	key      = ""
-	secret   = ""
-	domain   = ""
-	realm    = ""
+var (
+	email    = os.Getenv("EMAIL")
+	password = os.Getenv("PASSWORD")
+	key      = os.Getenv("CLIENT_KEY")
+	secret   = os.Getenv("CLIENT_SECRECT")
+	domain   = os.Getenv("DOMAIN")
+	realm    = os.Getenv("REALM")
 	debug    = false
 )
 
@@ -133,7 +134,7 @@ func main() {
 	// Create the client
 	client, err := openx.NewClient(domain, realm, key, secret, email, password, debug)
 	if err != nil {
-		log.Fatalf("Client could not be created %v", err)
+		log.Fatalf("Client could not be created:\n %v", err)
 	}
 	// remove cookie and session information from client
 	defer client.LogOff()

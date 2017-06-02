@@ -5,9 +5,6 @@ This package is still in development.  It is a client wrapper for Openx3 based h
 ----------
 
 
-At the moment this package can be installed via (subject to change):
-**go get github.com/marcsantiago/OX3-Go-API-Client/openx**
-
 # openx
 `import "github.com/marcsantiago/OX3-Go-API-Client/openx"`
 
