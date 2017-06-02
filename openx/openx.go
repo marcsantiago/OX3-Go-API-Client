@@ -27,9 +27,7 @@ const (
 	callBack         = "oob"
 )
 
-// Client holds all the user information and all data is private
-// At the moment i'm only supporting the APIPath2 and 4.0
-type Client struct {
+type client struct {
 	domain          string
 	realm           string
 	scheme          string
@@ -42,9 +40,9 @@ type Client struct {
 	session         *http.Client
 }
 
-// Get is simailiar to the normal Go *http.Client.Get,
+// Get is simailiar to the normal Go *http.client.Get,
 // except string parameters can be passed in the url or the as a map[string]interface{}
-func (c *Client) Get(url string, urlParms map[string]interface{}) (res *http.Response, err error) {
+func (c *client) Get(url string, urlParms map[string]interface{}) (res *http.Response, err error) {
 	url = c.resolveURL(url)
 	if urlParms != nil {
 		p := "?"
@@ -71,7 +69,7 @@ func (c *Client) Get(url string, urlParms map[string]interface{}) (res *http.Res
 }
 
 // Delete creates a delete request
-func (c *Client) Delete(url string, data io.Reader) (res *http.Response, err error) {
+func (c *client) Delete(url string, data io.Reader) (res *http.Response, err error) {
 	request, err := http.NewRequest("DELETE", c.resolveURL(url), data)
 	if err != nil {
 		log.Fatalf("Could not create DELETE requests: %v", err)
@@ -81,7 +79,7 @@ func (c *Client) Delete(url string, data io.Reader) (res *http.Response, err err
 }
 
 // Options is a wrapper for a GET request that has the /options endpoint already passed in
-func (c *Client) Options(url string) (res *http.Response, err error) {
+func (c *client) Options(url string) (res *http.Response, err error) {
 	if !strings.Contains(url, "/options") {
 		url = path.Join("/options", url)
 	}
@@ -90,7 +88,7 @@ func (c *Client) Options(url string) (res *http.Response, err error) {
 }
 
 // Put creates a put request
-func (c *Client) Put(url string, data io.Reader) (res *http.Response, err error) {
+func (c *client) Put(url string, data io.Reader) (res *http.Response, err error) {
 	request, err := http.NewRequest("PUT", c.resolveURL(url), data)
 	if err != nil {
 		log.Fatalf("Could not create PUT requests: %v", err)
@@ -99,26 +97,26 @@ func (c *Client) Put(url string, data io.Reader) (res *http.Response, err error)
 	return
 }
 
-// Post is a wrapper for the basic Go *http.Client.Post, however content type is automatically set to application/json
-func (c *Client) Post(url string, data io.Reader) (res *http.Response, err error) {
+// Post is a wrapper for the basic Go *http.client.Post, however content type is automatically set to application/json
+func (c *client) Post(url string, data io.Reader) (res *http.Response, err error) {
 	res, err = c.session.Post(c.resolveURL(url), "application/json", data)
 	return
 }
 
-// PostForm is a wrapper for the basic Go *http.Client.PostForm
-func (c *Client) PostForm(url string, data url.Values) (res *http.Response, err error) {
+// PostForm is a wrapper for the basic Go *http.client.PostForm
+func (c *client) PostForm(url string, data url.Values) (res *http.Response, err error) {
 	res, err = c.session.PostForm(c.resolveURL(url), data)
 	return
 }
 
-// LogOff sets the created session to an empty http.Client
-func (c *Client) LogOff() (res *http.Response, err error) {
+// LogOff sets the created session to an empty http.client
+func (c *client) LogOff() (res *http.Response, err error) {
 	// set the session to an empty struct to clear auth information
 	c.session = &http.Client{}
 	return
 }
 
-func (c *Client) resolveURL(endpoint string) (u string) {
+func (c *client) resolveURL(endpoint string) (u string) {
 	rawURL, err := url.Parse(endpoint)
 	if err != nil {
 		log.Fatalln("Could not parse endpoint: %v", err)
@@ -129,7 +127,7 @@ func (c *Client) resolveURL(endpoint string) (u string) {
 	return
 }
 
-func (c *Client) getAccessToken(debug bool) *oauth.AccessToken {
+func (c *client) getAccessToken(debug bool) *oauth.AccessToken {
 	requestToken, requestURL, err := consumer.GetRequestTokenAndUrl(callBack)
 	if err != nil {
 		log.Fatalf("Requests token could not be generated %v", err)
@@ -182,29 +180,29 @@ func (c *Client) getAccessToken(debug bool) *oauth.AccessToken {
 	return accessToken
 }
 
-// NewClient creates the basic Openx3 *Client via oauth1
-func NewClient(domain, realm, consumerKey, consumerSecrect, email, password string, debug bool) (*Client, error) {
+// Newclient creates the basic Openx3 *client via oauth1
+func Newclient(domain, realm, consumerKey, consumerSecrect, email, password string, debug bool) (*client, error) {
 	if strings.TrimSpace(domain) == "" {
-		return &Client{}, fmt.Errorf("Domain cannot be emtpy")
+		return &client{}, fmt.Errorf("Domain cannot be emtpy")
 	}
 	if strings.TrimSpace(realm) == "" {
-		return &Client{}, fmt.Errorf("Realm cannot be emtpy")
+		return &client{}, fmt.Errorf("Realm cannot be emtpy")
 	}
 	if strings.TrimSpace(consumerKey) == "" {
-		return &Client{}, fmt.Errorf("Consumer key cannot be emtpy")
+		return &client{}, fmt.Errorf("Consumer key cannot be emtpy")
 	}
 	if strings.TrimSpace(consumerSecrect) == "" {
-		return &Client{}, fmt.Errorf("Consumer secrect cannot be emtpy")
+		return &client{}, fmt.Errorf("Consumer secrect cannot be emtpy")
 	}
 	if strings.TrimSpace(email) == "" {
-		return &Client{}, fmt.Errorf("email cannot be emtpy")
+		return &client{}, fmt.Errorf("email cannot be emtpy")
 	}
 	if strings.TrimSpace(password) == "" {
-		return &Client{}, fmt.Errorf("password cannot be emtpy")
+		return &client{}, fmt.Errorf("password cannot be emtpy")
 	}
 
 	// create base client default to http
-	c := &Client{
+	c := &client{
 		domain:          domain,
 		realm:           realm,
 		consumerKey:     consumerKey,
