@@ -44,7 +44,7 @@ type Client struct {
 }
 
 // Get is simailiar to the normal Go *http.Client.Get
-// except string parameters can be pass in in the url or the as a map[string]interface{}
+// except string parameters can be passed in the url or the as a map[string]interface{}
 func (c *Client) Get(url string, urlParms map[string]interface{}) (res *http.Response, err error) {
 	url = c.resolveURL(url)
 	if urlParms != nil {
@@ -100,10 +100,10 @@ func (c *Client) Put(url string, data io.Reader) (res *http.Response, err error)
 	return
 }
 
-// Post is a wrapper for the basic Go *http.Client.Post
-func (c *Client) Post(url string, contentType string, data io.Reader) (res *http.Response, err error) {
-	res, err = c.session.Post(c.resolveURL(url), contentType, data)
-
+// Post is a wrapper for the basic Go *http.Client.Post, however content type is automatically set to application/json
+// as per Openx's documentation https://docs.openx.com/Content/developers/platform_api/api_req_and_responses.html
+func (c *Client) Post(url string, data io.Reader) (res *http.Response, err error) {
+	res, err = c.session.Post(c.resolveURL(url), "application/json", data)
 	return
 }
 
