@@ -11,10 +11,10 @@ At the moment this package can be installed via (subject to change):
 Everything is still being documented, for offline access to the documentation
 use the command
 
-Generates and offline html file
+Generates an offline html file that can be viewed
 **godoc -html github.com/marcsantiago/OX3-Go-API-Client/openx > docs.html**
 
-or start a localhost version
+or start a localhost version, which will show you all the docs for every package in your GOPATH
 **godoc -http=":6060"**
 
 ----------
