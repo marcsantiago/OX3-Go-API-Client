@@ -18,7 +18,6 @@ import (
 // oauth global consumer
 var consumer *oauth.Consumer
 
-// At the moment i'm only supporting the APIPath2 and 4.0
 const (
 	version          = "0.0.1"
 	requestTokenURL  = "https://sso.openx.com/api/index/initiate"
@@ -29,7 +28,8 @@ const (
 )
 
 // Client holds all the user information, all of it is private however and
-// as a result only the defined methods below are used to interact with the data
+// as a result only the defined exported methods below are used to interact with the client.
+// At the moment i'm only supporting the APIPath2 and 4.0
 type Client struct {
 	domain          string
 	realm           string
