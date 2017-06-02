@@ -27,8 +27,8 @@ const (
 	callBack         = "oob"
 )
 
-// client holds all the auth data, no point in exposing it to the user
-type client struct {
+// Client holds all the auth data, no point in exposing it to the user though
+type Client struct {
 	domain          string
 	realm           string
 	scheme          string
@@ -43,7 +43,7 @@ type client struct {
 
 // Get is simailiar to the normal Go *http.client.Get,
 // except string parameters can be passed in the url or the as a map[string]interface{}
-func (c *client) Get(url string, urlParms map[string]interface{}) (res *http.Response, err error) {
+func (c *Client) Get(url string, urlParms map[string]interface{}) (res *http.Response, err error) {
 	url = c.resolveURL(url)
 	if urlParms != nil {
 		p := "?"
@@ -70,7 +70,7 @@ func (c *client) Get(url string, urlParms map[string]interface{}) (res *http.Res
 }
 
 // Delete creates a delete request
-func (c *client) Delete(url string, data io.Reader) (res *http.Response, err error) {
+func (c *Client) Delete(url string, data io.Reader) (res *http.Response, err error) {
 	request, err := http.NewRequest("DELETE", c.resolveURL(url), data)
 	if err != nil {
 		log.Fatalf("Could not create DELETE requests: %v", err)
@@ -80,7 +80,7 @@ func (c *client) Delete(url string, data io.Reader) (res *http.Response, err err
 }
 
 // Options is a wrapper for a GET request that has the /options endpoint already passed in
-func (c *client) Options(url string) (res *http.Response, err error) {
+func (c *Client) Options(url string) (res *http.Response, err error) {
 	if !strings.Contains(url, "/options") {
 		url = path.Join("/options", url)
 	}
@@ -89,7 +89,7 @@ func (c *client) Options(url string) (res *http.Response, err error) {
 }
 
 // Put creates a put request
-func (c *client) Put(url string, data io.Reader) (res *http.Response, err error) {
+func (c *Client) Put(url string, data io.Reader) (res *http.Response, err error) {
 	request, err := http.NewRequest("PUT", c.resolveURL(url), data)
 	if err != nil {
 		log.Fatalf("Could not create PUT requests: %v", err)
@@ -99,25 +99,25 @@ func (c *client) Put(url string, data io.Reader) (res *http.Response, err error)
 }
 
 // Post is a wrapper for the basic Go *http.client.Post, however content type is automatically set to application/json
-func (c *client) Post(url string, data io.Reader) (res *http.Response, err error) {
+func (c *Client) Post(url string, data io.Reader) (res *http.Response, err error) {
 	res, err = c.session.Post(c.resolveURL(url), "application/json", data)
 	return
 }
 
 // PostForm is a wrapper for the basic Go *http.client.PostForm
-func (c *client) PostForm(url string, data url.Values) (res *http.Response, err error) {
+func (c *Client) PostForm(url string, data url.Values) (res *http.Response, err error) {
 	res, err = c.session.PostForm(c.resolveURL(url), data)
 	return
 }
 
 // LogOff sets the created session to an empty http.client
-func (c *client) LogOff() (res *http.Response, err error) {
+func (c *Client) LogOff() (res *http.Response, err error) {
 	// set the session to an empty struct to clear auth information
 	c.session = &http.Client{}
 	return
 }
 
-func (c *client) resolveURL(endpoint string) (u string) {
+func (c *Client) resolveURL(endpoint string) (u string) {
 	rawURL, err := url.Parse(endpoint)
 	if err != nil {
 		log.Fatalln("Could not parse endpoint: %v", err)
@@ -128,7 +128,7 @@ func (c *client) resolveURL(endpoint string) (u string) {
 	return
 }
 
-func (c *client) getAccessToken(debug bool) (accessToken *oauth.AccessToken, err error) {
+func (c *Client) getAccessToken(debug bool) (accessToken *oauth.AccessToken, err error) {
 	requestToken, requestURL, err := consumer.GetRequestTokenAndUrl(callBack)
 	if err != nil {
 		err = fmt.Errorf("Requests token could not be generated:\n %v", err)
@@ -188,29 +188,29 @@ func (c *client) getAccessToken(debug bool) (accessToken *oauth.AccessToken, err
 	return accessToken, nil
 }
 
-// Newclient creates the basic Openx3 *client via oauth1
-func Newclient(domain, realm, consumerKey, consumerSecrect, email, password string, debug bool) (*client, error) {
+// Newclient creates the basic Openx3 *Client via oauth1
+func Newclient(domain, realm, consumerKey, consumerSecrect, email, password string, debug bool) (*Client, error) {
 	if strings.TrimSpace(domain) == "" {
-		return &client{}, fmt.Errorf("Domain cannot be emtpy")
+		return &Client{}, fmt.Errorf("Domain cannot be emtpy")
 	}
 	if strings.TrimSpace(realm) == "" {
-		return &client{}, fmt.Errorf("Realm cannot be emtpy")
+		return &Client{}, fmt.Errorf("Realm cannot be emtpy")
 	}
 	if strings.TrimSpace(consumerKey) == "" {
-		return &client{}, fmt.Errorf("Consumer key cannot be emtpy")
+		return &Client{}, fmt.Errorf("Consumer key cannot be emtpy")
 	}
 	if strings.TrimSpace(consumerSecrect) == "" {
-		return &client{}, fmt.Errorf("Consumer secrect cannot be emtpy")
+		return &Client{}, fmt.Errorf("Consumer secrect cannot be emtpy")
 	}
 	if strings.TrimSpace(email) == "" {
-		return &client{}, fmt.Errorf("email cannot be emtpy")
+		return &Client{}, fmt.Errorf("email cannot be emtpy")
 	}
 	if strings.TrimSpace(password) == "" {
-		return &client{}, fmt.Errorf("password cannot be emtpy")
+		return &Client{}, fmt.Errorf("password cannot be emtpy")
 	}
 
 	// create base client default to http
-	c := &client{
+	c := &Client{
 		domain:          domain,
 		realm:           realm,
 		consumerKey:     consumerKey,
@@ -232,7 +232,7 @@ func Newclient(domain, realm, consumerKey, consumerSecrect, email, password stri
 
 	accessToken, err := c.getAccessToken(debug)
 	if err != nil {
-		return &client{}, fmt.Errorf("Access token could not be generated:\n %v", err)
+		return &Client{}, fmt.Errorf("Access token could not be generated:\n %v", err)
 	}
 
 	// create a cookie jar to add the access token to
@@ -241,7 +241,7 @@ func Newclient(domain, realm, consumerKey, consumerSecrect, email, password stri
 	}
 	cj, err := cookiejar.New(nil)
 	if err != nil {
-		return &client{}, fmt.Errorf("Cookiejar could not be created %v", err)
+		return &Client{}, fmt.Errorf("Cookiejar could not be created %v", err)
 	}
 
 	// clean up entered domain just incase user passes in a domain in a way I'm not ready for
@@ -257,7 +257,7 @@ func Newclient(domain, realm, consumerKey, consumerSecrect, email, password stri
 	// format the domain
 	base, err := url.Parse(fmt.Sprintf("%s://www.%s", c.scheme, c.domain))
 	if err != nil {
-		return &client{}, fmt.Errorf("Domain could not be parsed to type url %v", err)
+		return &Client{}, fmt.Errorf("Domain could not be parsed to type url %v", err)
 	}
 
 	if debug {
@@ -282,7 +282,7 @@ func Newclient(domain, realm, consumerKey, consumerSecrect, email, password stri
 	}
 	session, err := consumer.MakeHttpClient(accessToken)
 	if err != nil {
-		return &client{}, fmt.Errorf("Could not create client %v", err)
+		return &Client{}, fmt.Errorf("Could not create client %v", err)
 	}
 	session.Jar = cj
 	c.session = session
