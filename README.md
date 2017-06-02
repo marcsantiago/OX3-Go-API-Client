@@ -1,7 +1,6 @@
 This package is still in development.  It is a client wrapper for Openx3 based heavily on the Openx3 Python Client.  This package relies on [github.com/sirupsen/logrus](github.com/sirupsen/logrus) and [github.com/mrjones/oauth](github.com/mrjones/oauth).
 
-**This is still in development and test phase. This code and I have 0 officiations with Openx3.**
-
+**This is still in development and test phase. This code and I have 0 affiliations with Openx3 and it is subject to change**
 
 ----------
 
