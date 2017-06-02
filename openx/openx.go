@@ -27,6 +27,7 @@ const (
 	callBack         = "oob"
 )
 
+// client holds all the auth data, no point in exposing it to the user
 type client struct {
 	domain          string
 	realm           string
@@ -127,10 +128,11 @@ func (c *client) resolveURL(endpoint string) (u string) {
 	return
 }
 
-func (c *client) getAccessToken(debug bool) *oauth.AccessToken {
+func (c *client) getAccessToken(debug bool) (accessToken *oauth.AccessToken, err error) {
 	requestToken, requestURL, err := consumer.GetRequestTokenAndUrl(callBack)
 	if err != nil {
-		log.Fatalf("Requests token could not be generated %v", err)
+		err = fmt.Errorf("Requests token could not be generated:\n %v", err)
+		return
 	}
 	if debug {
 		log.Info("Requests Token generated")
@@ -144,40 +146,46 @@ func (c *client) getAccessToken(debug bool) *oauth.AccessToken {
 	urlData.Set("oauth_token", requestToken.Token)
 	resp, err := request.PostForm(requestURL, urlData)
 	if err != nil {
-		log.Fatalf("Could not get authorization token: %v", err)
+		err = fmt.Errorf("Could not get authorization token:\n %v", err)
+		return
 	}
 	if debug {
 		log.Info("Getting auth token")
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		log.Fatalf("Could not get authorization status returned: %d", resp.StatusCode)
+		err = fmt.Errorf("Could not get authorization status returned:\n %v", err)
+		return
 	}
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatalf("Could not read body: %v", err)
+		err = fmt.Errorf("Could not read body: %v", err)
+		return
 	}
 	// parse the response, should contain oauth_verifier
 	raw, err := url.Parse(string(body))
 	if err != nil {
-		log.Fatalf("Could not parse url: %v", err)
+		err = fmt.Errorf("Could not parse url: %v", err)
+		return
 	}
 	authInfo := raw.Query()
 	var oauthVerifier string
-	if val, ok := authInfo["oauth_verifier"]; !ok {
-		log.Fatalln("oauth_verifier key not in response", err)
-	} else {
-		oauthVerifier = val[0]
+	if _, ok := authInfo["oauth_verifier"]; !ok {
+		err = fmt.Errorf("oauth_verifier key not in response:\n %v", err)
+		return
 	}
+	oauthVerifier = authInfo["oauth_verifier"][0]
+
 	// use oauth_verifier to get access_token
-	accessToken, err := consumer.AuthorizeToken(requestToken, oauthVerifier)
+	accessToken, err = consumer.AuthorizeToken(requestToken, oauthVerifier)
 	if err != nil {
-		log.Fatalf("Access token could not be generated %v", err)
+		err = fmt.Errorf("Access token could not be generated:\n %v", err)
+		return
 	}
 	if debug {
 		log.Info("Access Token generated")
 	}
-	return accessToken
+	return accessToken, nil
 }
 
 // Newclient creates the basic Openx3 *client via oauth1
@@ -222,12 +230,18 @@ func Newclient(domain, realm, consumerKey, consumerSecrect, email, password stri
 	})
 	consumer.Debug(debug)
 
-	accessToken := c.getAccessToken(debug)
+	accessToken, err := c.getAccessToken(debug)
+	if err != nil {
+		return &client{}, fmt.Errorf("Access token could not be generated:\n %v", err)
+	}
 
 	// create a cookie jar to add the access token to
+	if debug {
+		log.Info("Creating cookiejar")
+	}
 	cj, err := cookiejar.New(nil)
 	if err != nil {
-		log.Fatalf("Cookiejar could not be created %v", err)
+		return &client{}, fmt.Errorf("Cookiejar could not be created %v", err)
 	}
 
 	// clean up entered domain just incase user passes in a domain in a way I'm not ready for
@@ -243,9 +257,12 @@ func Newclient(domain, realm, consumerKey, consumerSecrect, email, password stri
 	// format the domain
 	base, err := url.Parse(fmt.Sprintf("%s://www.%s", c.scheme, c.domain))
 	if err != nil {
-		log.Fatalf("Domain could not be parsed to type url %v", err)
+		return &client{}, fmt.Errorf("Domain could not be parsed to type url %v", err)
 	}
 
+	if debug {
+		log.Info("Setting openx3_access_token in cookie jar")
+	}
 	// create auth cookie
 	var cookies []*http.Cookie
 	cookie := &http.Cookie{
@@ -260,9 +277,12 @@ func Newclient(domain, realm, consumerKey, consumerSecrect, email, password stri
 	cj.SetCookies(base, cookies)
 
 	// create authenticated session
+	if debug {
+		log.Info("Creating oauth1 session")
+	}
 	session, err := consumer.MakeHttpClient(accessToken)
 	if err != nil {
-		log.Fatalf("Could not create client %v", err)
+		return &client{}, fmt.Errorf("Could not create client %v", err)
 	}
 	session.Jar = cj
 	c.session = session
