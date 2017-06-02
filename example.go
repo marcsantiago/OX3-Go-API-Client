@@ -43,6 +43,7 @@ func getReports(client *openx.Client) {
 	return
 }
 
+// using open pagination rules https://docs.openx.com/Content/developers/platform_api/api_pagination.html
 func getAdunitIds(client *openx.Client) []string {
 	offset, limit := 0, 500
 	hasMore := true

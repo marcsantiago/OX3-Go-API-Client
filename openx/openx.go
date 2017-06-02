@@ -15,7 +15,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// oauth global consumer
+// oauth global consumer (private)
 var consumer *oauth.Consumer
 
 const (
@@ -27,8 +27,7 @@ const (
 	callBack         = "oob"
 )
 
-// Client holds all the user information, all of it is private however and
-// as a result only the defined exported methods below are used to interact with the client.
+// Client holds all the user information and all data is private
 // At the moment i'm only supporting the APIPath2 and 4.0
 type Client struct {
 	domain          string
@@ -43,7 +42,7 @@ type Client struct {
 	session         *http.Client
 }
 
-// Get is simailiar to the normal Go *http.Client.Get
+// Get is simailiar to the normal Go *http.Client.Get,
 // except string parameters can be passed in the url or the as a map[string]interface{}
 func (c *Client) Get(url string, urlParms map[string]interface{}) (res *http.Response, err error) {
 	url = c.resolveURL(url)
@@ -71,7 +70,7 @@ func (c *Client) Get(url string, urlParms map[string]interface{}) (res *http.Res
 	return
 }
 
-// Delete creates a delete request which the Openx3 API uses, but that is not defined by Go
+// Delete creates a delete request
 func (c *Client) Delete(url string, data io.Reader) (res *http.Response, err error) {
 	request, err := http.NewRequest("DELETE", c.resolveURL(url), data)
 	if err != nil {
@@ -90,7 +89,7 @@ func (c *Client) Options(url string) (res *http.Response, err error) {
 	return
 }
 
-// Put creates a put request which the Openx3 API uses, but that is not defined by Go
+// Put creates a put request
 func (c *Client) Put(url string, data io.Reader) (res *http.Response, err error) {
 	request, err := http.NewRequest("PUT", c.resolveURL(url), data)
 	if err != nil {
@@ -101,7 +100,6 @@ func (c *Client) Put(url string, data io.Reader) (res *http.Response, err error)
 }
 
 // Post is a wrapper for the basic Go *http.Client.Post, however content type is automatically set to application/json
-// as per Openx's documentation https://docs.openx.com/Content/developers/platform_api/api_req_and_responses.html
 func (c *Client) Post(url string, data io.Reader) (res *http.Response, err error) {
 	res, err = c.session.Post(c.resolveURL(url), "application/json", data)
 	return
@@ -113,7 +111,7 @@ func (c *Client) PostForm(url string, data url.Values) (res *http.Response, err 
 	return
 }
 
-// LogOff sets the created session to an empty http.Client, destorying the stored cookie
+// LogOff sets the created session to an empty http.Client
 func (c *Client) LogOff() (res *http.Response, err error) {
 	// set the session to an empty struct to clear auth information
 	c.session = &http.Client{}
