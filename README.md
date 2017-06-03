@@ -16,8 +16,10 @@ This package is still in development.  It is a client wrapper for Openx3 based h
 
 
 ## <a name="pkg-index">Index</a>
+* [func CreateConfigFileTemplate(fileCreationPath string) string](#CreateConfigFileTemplate)
 * [type Client](#Client)
-  * [func Newclient(domain, realm, consumerKey, consumerSecrect, email, password string, debug bool) (*Client, error)](#Newclient)
+  * [func NewClient(domain, realm, consumerKey, consumerSecrect, email, password string, debug bool) (*Client, error)](#NewClient)
+  * [func NewClientFromFile(filePath string, debug bool) (*Client, error)](#NewClientFromFile)
   * [func (c *Client) Delete(url string, data io.Reader) (res *http.Response, err error)](#Client.Delete)
   * [func (c *Client) Get(url string, urlParms map[string]interface{}) (res *http.Response, err error)](#Client.Get)
   * [func (c *Client) LogOff() (res *http.Response, err error)](#Client.LogOff)
@@ -34,8 +36,29 @@ This package is still in development.  It is a client wrapper for Openx3 based h
 
 
 
+## <a name="CreateConfigFileTemplate">func</a> [CreateConfigFileTemplate](/src/target/openx.go?s=11952:12013#L415)
+``` go
+func CreateConfigFileTemplate(fileCreationPath string) string
+```
+CreateConfigFileTemplate creates a templated json file used in NewClientFromFile.
+Otherwise the file format for NewClientFromFile is
 
-## <a name="Client">type</a> [Client](/src/target/openx.go?s=611:876#L21)
+
+	  {
+		"domain": "enter domain",
+		"realm": "enter realm",
+		"consumer_key": "enter key",
+		"consumer_secrect": "enter secrect key",
+		"email": "enter email",
+		"password": "enter password"
+	  }
+
+the fileCreationPath is returned incase a path is needed
+
+
+
+
+## <a name="Client">type</a> [Client](/src/target/openx.go?s=634:899#L23)
 ``` go
 type Client struct {
     // contains filtered or unexported fields
@@ -49,17 +72,24 @@ Client holds all the auth data, no point in exposing it to the user though
 
 
 
-### <a name="Newclient">func</a> [Newclient](/src/target/openx.go?s=5322:5434#L182)
+### <a name="NewClient">func</a> [NewClient](/src/target/openx.go?s=5345:5457#L184)
 ``` go
-func Newclient(domain, realm, consumerKey, consumerSecrect, email, password string, debug bool) (*Client, error)
+func NewClient(domain, realm, consumerKey, consumerSecrect, email, password string, debug bool) (*Client, error)
 ```
-Newclient creates the basic Openx3 *Client via oauth1
+NewClient creates the basic Openx3 *Client via oauth1
+
+
+### <a name="NewClientFromFile">func</a> [NewClientFromFile](/src/target/openx.go?s=8151:8219#L285)
+``` go
+func NewClientFromFile(filePath string, debug bool) (*Client, error)
+```
+NewClientFromFile parses a JSON file to grab your Openx Credentials
 
 
 
 
 
-### <a name="Client.Delete">func</a> (\*Client) [Delete](/src/target/openx.go?s=1710:1793#L63)
+### <a name="Client.Delete">func</a> (\*Client) [Delete](/src/target/openx.go?s=1733:1816#L65)
 ``` go
 func (c *Client) Delete(url string, data io.Reader) (res *http.Response, err error)
 ```
@@ -68,7 +98,7 @@ Delete creates a delete request
 
 
 
-### <a name="Client.Get">func</a> (\*Client) [Get](/src/target/openx.go?s=1021:1118#L36)
+### <a name="Client.Get">func</a> (\*Client) [Get](/src/target/openx.go?s=1044:1141#L38)
 ``` go
 func (c *Client) Get(url string, urlParms map[string]interface{}) (res *http.Response, err error)
 ```
@@ -78,7 +108,7 @@ except string parameters can be passed in the url or the as a map[string]interfa
 
 
 
-### <a name="Client.LogOff">func</a> (\*Client) [LogOff](/src/target/openx.go?s=3146:3203#L104)
+### <a name="Client.LogOff">func</a> (\*Client) [LogOff](/src/target/openx.go?s=3169:3226#L106)
 ``` go
 func (c *Client) LogOff() (res *http.Response, err error)
 ```
@@ -87,7 +117,7 @@ LogOff sets the created session to an empty http.client
 
 
 
-### <a name="Client.Options">func</a> (\*Client) [Options](/src/target/openx.go?s=2078:2146#L73)
+### <a name="Client.Options">func</a> (\*Client) [Options](/src/target/openx.go?s=2101:2169#L75)
 ``` go
 func (c *Client) Options(url string) (res *http.Response, err error)
 ```
@@ -96,7 +126,7 @@ Options is a wrapper for a GET request that has the /options endpoint already pa
 
 
 
-### <a name="Client.Post">func</a> (\*Client) [Post](/src/target/openx.go?s=2700:2781#L92)
+### <a name="Client.Post">func</a> (\*Client) [Post](/src/target/openx.go?s=2723:2804#L94)
 ``` go
 func (c *Client) Post(url string, data io.Reader) (res *http.Response, err error)
 ```
@@ -105,7 +135,7 @@ Post is a wrapper for the basic Go *http.client.Post, however content type is au
 
 
 
-### <a name="Client.PostForm">func</a> (\*Client) [PostForm](/src/target/openx.go?s=2931:3017#L98)
+### <a name="Client.PostForm">func</a> (\*Client) [PostForm](/src/target/openx.go?s=2954:3040#L100)
 ``` go
 func (c *Client) PostForm(url string, data url.Values) (res *http.Response, err error)
 ```
@@ -114,7 +144,7 @@ PostForm is a wrapper for the basic Go *http.client.PostForm
 
 
 
-### <a name="Client.Put">func</a> (\*Client) [Put](/src/target/openx.go?s=2313:2393#L82)
+### <a name="Client.Put">func</a> (\*Client) [Put](/src/target/openx.go?s=2336:2416#L84)
 ``` go
 func (c *Client) Put(url string, data io.Reader) (res *http.Response, err error)
 ```
