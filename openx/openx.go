@@ -1,12 +1,14 @@
 package openx
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
+	"os"
 	"path"
 	"strconv"
 	"strings"
@@ -188,8 +190,8 @@ func (c *Client) getAccessToken(debug bool) (accessToken *oauth.AccessToken, err
 	return accessToken, nil
 }
 
-// Newclient creates the basic Openx3 *Client via oauth1
-func Newclient(domain, realm, consumerKey, consumerSecrect, email, password string, debug bool) (*Client, error) {
+// NewClient creates the basic Openx3 *Client via oauth1
+func NewClient(domain, realm, consumerKey, consumerSecrect, email, password string, debug bool) (*Client, error) {
 	if strings.TrimSpace(domain) == "" {
 		return &Client{}, fmt.Errorf("Domain cannot be emtpy")
 	}
@@ -287,4 +289,163 @@ func Newclient(domain, realm, consumerKey, consumerSecrect, email, password stri
 	session.Jar = cj
 	c.session = session
 	return c, nil
+}
+
+// NewClientFromFile parses a JSON file to grab your Openx Credentials
+func NewClientFromFile(filePath string, debug bool) (*Client, error) {
+	credentials := struct {
+		Domain          string `json:"domain"`
+		Realm           string `json:"realm"`
+		ConsumerKey     string `json:"consumer_key"`
+		ConsumerSecrect string `json:"consumer_secrect"`
+		Email           string `json:"email"`
+		Password        string `json:"password"`
+	}{}
+	contents, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		return &Client{}, fmt.Errorf("Could not read %s:\n %v", filePath, err)
+	}
+	err = json.Unmarshal(contents, &credentials)
+	if err != nil {
+		return &Client{}, fmt.Errorf("Could not load bytes into struct:\n %v", err)
+	}
+
+	if strings.TrimSpace(credentials.Domain) == "" {
+		return &Client{}, fmt.Errorf("Domain cannot be emtpy")
+	}
+	if strings.TrimSpace(credentials.Realm) == "" {
+		return &Client{}, fmt.Errorf("Realm cannot be emtpy")
+	}
+	if strings.TrimSpace(credentials.ConsumerKey) == "" {
+		return &Client{}, fmt.Errorf("Consumer key cannot be emtpy")
+	}
+	if strings.TrimSpace(credentials.ConsumerSecrect) == "" {
+		return &Client{}, fmt.Errorf("Consumer secrect cannot be emtpy")
+	}
+	if strings.TrimSpace(credentials.Email) == "" {
+		return &Client{}, fmt.Errorf("email cannot be emtpy")
+	}
+	if strings.TrimSpace(credentials.Password) == "" {
+		return &Client{}, fmt.Errorf("password cannot be emtpy")
+	}
+
+	// create base client default to http
+	c := &Client{
+		domain:          credentials.Domain,
+		realm:           credentials.Realm,
+		consumerKey:     credentials.ConsumerKey,
+		consumerSecrect: credentials.ConsumerSecrect,
+		apiPath:         apiPath,
+		email:           credentials.Email,
+		password:        credentials.Password,
+		scheme:          "http",
+	}
+
+	// create oauth consumer
+	consumer = oauth.NewConsumer(c.consumerKey, c.consumerSecrect, oauth.ServiceProvider{
+		RequestTokenUrl:   requestTokenURL,
+		AuthorizeTokenUrl: authorizationURL,
+		AccessTokenUrl:    accessTokenURL,
+		HttpMethod:        "POST",
+	})
+	consumer.Debug(debug)
+
+	accessToken, err := c.getAccessToken(debug)
+	if err != nil {
+		return &Client{}, fmt.Errorf("Access token could not be generated:\n %v", err)
+	}
+
+	// create a cookie jar to add the access token to
+	if debug {
+		log.Info("Creating cookiejar")
+	}
+	cj, err := cookiejar.New(nil)
+	if err != nil {
+		return &Client{}, fmt.Errorf("Cookiejar could not be created %v", err)
+	}
+
+	// clean up entered domain just incase user passes in a domain in a way I'm not ready for
+	r := strings.NewReplacer(
+		"www.", "",
+		"http://", "",
+		"https://", "",
+		"//", "",
+		"/", "",
+	)
+
+	c.domain = r.Replace(c.domain)
+	// format the domain
+	base, err := url.Parse(fmt.Sprintf("%s://www.%s", c.scheme, c.domain))
+	if err != nil {
+		return &Client{}, fmt.Errorf("Domain could not be parsed to type url %v", err)
+	}
+
+	if debug {
+		log.Info("Setting openx3_access_token in cookie jar")
+	}
+	// create auth cookie
+	var cookies []*http.Cookie
+	cookie := &http.Cookie{
+		Name:   "openx3_access_token",
+		Value:  accessToken.Token,
+		Path:   "/",
+		Domain: c.domain,
+		Secure: false,
+		// HttpOnly: false,
+	}
+	cookies = append(cookies, cookie)
+	cj.SetCookies(base, cookies)
+
+	// create authenticated session
+	if debug {
+		log.Info("Creating oauth1 session")
+	}
+	session, err := consumer.MakeHttpClient(accessToken)
+	if err != nil {
+		return &Client{}, fmt.Errorf("Could not create client %v", err)
+	}
+	session.Jar = cj
+	c.session = session
+	return c, nil
+}
+
+// CreateConfigFileTemplate creates a templated json file used in NewClientFromFile.
+// Otherwise the file format for NewClientFromFile is
+/*
+  {
+	"domain": "enter domain",
+	"realm": "enter realm",
+	"consumer_key": "enter key",
+	"consumer_secrect": "enter secrect key",
+	"email": "enter email",
+	"password": "enter password"
+  }
+*/
+// the fileCreationPath is returned incase a path is needed
+func CreateConfigFileTemplate(fileCreationPath string) string {
+	configFile := `
+	{
+		"domain": "enter domain",
+		"realm": "enter realm",
+		"consumer_key": "enter key",
+		"consumer_secrect": "enter secrect key",
+		"email": "enter email",
+		"password": "enter password"
+	}
+	`
+	if !strings.Contains(fileCreationPath, ".json") {
+		fileCreationPath = path.Join(fileCreationPath, "openx_config.json")
+	}
+
+	f, err := os.Create(fileCreationPath)
+	if err != nil {
+		log.Fatalf("Could not create the file:\n %v", err)
+	}
+	defer f.Close()
+	_, err = f.WriteString(configFile)
+	if err != nil {
+		log.Fatalf("Could not write data to %s:\n %v", fileCreationPath, err)
+	}
+	log.Infof("File was created: %s\n", fileCreationPath)
+	return fileCreationPath
 }
