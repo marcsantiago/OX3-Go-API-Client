@@ -2,6 +2,7 @@ package openx
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -17,8 +18,22 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// oauth global consumer (private)
-var consumer *oauth.Consumer
+var (
+	// oauth global consumer (private)
+	consumer *oauth.Consumer
+
+	// Error definitions
+	errParameter = errors.New("The value entered must be of type string, int, float64, or bool")
+
+	// clean up entered domain just incase user passes in a domain in a way I'm not ready for
+	domainReplacer = strings.NewReplacer(
+		"www.", "",
+		"http://", "",
+		"https://", "",
+		"//", "",
+		"/", "",
+	)
+)
 
 const (
 	version          = "0.0.1"
@@ -61,7 +76,7 @@ func (c *Client) Get(url string, urlParms map[string]interface{}) (res *http.Res
 			case bool:
 				v = strconv.FormatBool(value.(bool))
 			default:
-				log.Fatalln("The value entered %v must be of type string, int, float64, or bool")
+				return nil, errParameter
 			}
 			p += key + "=" + v + "&"
 		}
@@ -94,7 +109,7 @@ func (c *Client) Options(url string) (res *http.Response, err error) {
 func (c *Client) Put(url string, data io.Reader) (res *http.Response, err error) {
 	request, err := http.NewRequest("PUT", c.resolveURL(url), data)
 	if err != nil {
-		log.Fatalf("Could not create PUT requests: %v", err)
+		return nil, fmt.Errorf("could not create PUT request: %v", err)
 	}
 	res, err = c.session.Do(request)
 	return
@@ -133,7 +148,7 @@ func (c *Client) resolveURL(endpoint string) (u string) {
 func (c *Client) getAccessToken(debug bool) (accessToken *oauth.AccessToken, err error) {
 	requestToken, requestURL, err := consumer.GetRequestTokenAndUrl(callBack)
 	if err != nil {
-		err = fmt.Errorf("Requests token could not be generated:\n %v", err)
+		err = fmt.Errorf("request token could not be generated:\n %v", err)
 		return
 	}
 	if debug {
@@ -148,7 +163,7 @@ func (c *Client) getAccessToken(debug bool) (accessToken *oauth.AccessToken, err
 	urlData.Set("oauth_token", requestToken.Token)
 	resp, err := request.PostForm(requestURL, urlData)
 	if err != nil {
-		err = fmt.Errorf("Could not get authorization token:\n %v", err)
+		err = fmt.Errorf("could not get authorization token:\n %v", err)
 		return
 	}
 	if debug {
@@ -156,18 +171,18 @@ func (c *Client) getAccessToken(debug bool) (accessToken *oauth.AccessToken, err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		err = fmt.Errorf("Could not get authorization status returned:\n %v", err)
+		err = fmt.Errorf("could not get authorization status returned:\n %v", err)
 		return
 	}
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		err = fmt.Errorf("Could not read body: %v", err)
+		err = fmt.Errorf("could not read body: %v", err)
 		return
 	}
 	// parse the response, should contain oauth_verifier
 	raw, err := url.Parse(string(body))
 	if err != nil {
-		err = fmt.Errorf("Could not parse url: %v", err)
+		err = fmt.Errorf("could not parse url: %v", err)
 		return
 	}
 	authInfo := raw.Query()
@@ -181,7 +196,7 @@ func (c *Client) getAccessToken(debug bool) (accessToken *oauth.AccessToken, err
 	// use oauth_verifier to get access_token
 	accessToken, err = consumer.AuthorizeToken(requestToken, oauthVerifier)
 	if err != nil {
-		err = fmt.Errorf("Access token could not be generated:\n %v", err)
+		err = fmt.Errorf("access token could not be generated:\n %v", err)
 		return
 	}
 	if debug {
@@ -193,22 +208,22 @@ func (c *Client) getAccessToken(debug bool) (accessToken *oauth.AccessToken, err
 // NewClient creates the basic Openx3 *Client via oauth1
 func NewClient(domain, realm, consumerKey, consumerSecrect, email, password string, debug bool) (*Client, error) {
 	if strings.TrimSpace(domain) == "" {
-		return &Client{}, fmt.Errorf("Domain cannot be emtpy")
+		return nil, fmt.Errorf("domain cannot be emtpy")
 	}
 	if strings.TrimSpace(realm) == "" {
-		return &Client{}, fmt.Errorf("Realm cannot be emtpy")
+		return nil, fmt.Errorf("realm cannot be emtpy")
 	}
 	if strings.TrimSpace(consumerKey) == "" {
-		return &Client{}, fmt.Errorf("Consumer key cannot be emtpy")
+		return nil, fmt.Errorf("consumer key cannot be emtpy")
 	}
 	if strings.TrimSpace(consumerSecrect) == "" {
-		return &Client{}, fmt.Errorf("Consumer secrect cannot be emtpy")
+		return nil, fmt.Errorf("consumer secrect cannot be emtpy")
 	}
 	if strings.TrimSpace(email) == "" {
-		return &Client{}, fmt.Errorf("email cannot be emtpy")
+		return nil, fmt.Errorf("email cannot be emtpy")
 	}
 	if strings.TrimSpace(password) == "" {
-		return &Client{}, fmt.Errorf("password cannot be emtpy")
+		return nil, fmt.Errorf("password cannot be emtpy")
 	}
 
 	// create base client default to http
@@ -234,7 +249,7 @@ func NewClient(domain, realm, consumerKey, consumerSecrect, email, password stri
 
 	accessToken, err := c.getAccessToken(debug)
 	if err != nil {
-		return &Client{}, fmt.Errorf("Access token could not be generated:\n %v", err)
+		return nil, fmt.Errorf("access token could not be generated:\n %v", err)
 	}
 
 	// create a cookie jar to add the access token to
@@ -243,27 +258,18 @@ func NewClient(domain, realm, consumerKey, consumerSecrect, email, password stri
 	}
 	cj, err := cookiejar.New(nil)
 	if err != nil {
-		return &Client{}, fmt.Errorf("Cookiejar could not be created %v", err)
+		return nil, fmt.Errorf("cookiejar could not be created %v", err)
 	}
 
-	// clean up entered domain just incase user passes in a domain in a way I'm not ready for
-	r := strings.NewReplacer(
-		"www.", "",
-		"http://", "",
-		"https://", "",
-		"//", "",
-		"/", "",
-	)
-
-	c.domain = r.Replace(c.domain)
+	c.domain = domainReplacer.Replace(c.domain)
 	// format the domain
 	base, err := url.Parse(fmt.Sprintf("%s://www.%s", c.scheme, c.domain))
 	if err != nil {
-		return &Client{}, fmt.Errorf("Domain could not be parsed to type url %v", err)
+		return nil, fmt.Errorf("domain could not be parsed to type url %v", err)
 	}
 
 	if debug {
-		log.Info("Setting openx3_access_token in cookie jar")
+		log.Info("setting openx3_access_token in cookie jar")
 	}
 	// create auth cookie
 	var cookies []*http.Cookie
@@ -280,11 +286,11 @@ func NewClient(domain, realm, consumerKey, consumerSecrect, email, password stri
 
 	// create authenticated session
 	if debug {
-		log.Info("Creating oauth1 session")
+		log.Info("creating oauth1 session")
 	}
 	session, err := consumer.MakeHttpClient(accessToken)
 	if err != nil {
-		return &Client{}, fmt.Errorf("Could not create client %v", err)
+		return nil, fmt.Errorf("could not create client %v", err)
 	}
 	session.Jar = cj
 	c.session = session
@@ -303,30 +309,30 @@ func NewClientFromFile(filePath string, debug bool) (*Client, error) {
 	}{}
 	contents, err := ioutil.ReadFile(filePath)
 	if err != nil {
-		return &Client{}, fmt.Errorf("Could not read %s:\n %v", filePath, err)
+		return nil, fmt.Errorf("could not read %s:\n %v", filePath, err)
 	}
 	err = json.Unmarshal(contents, &credentials)
 	if err != nil {
-		return &Client{}, fmt.Errorf("Could not load bytes into struct:\n %v", err)
+		return nil, fmt.Errorf("could not load bytes into struct:\n %v", err)
 	}
 
 	if strings.TrimSpace(credentials.Domain) == "" {
-		return &Client{}, fmt.Errorf("Domain cannot be emtpy")
+		return nil, fmt.Errorf("domain cannot be emtpy")
 	}
 	if strings.TrimSpace(credentials.Realm) == "" {
-		return &Client{}, fmt.Errorf("Realm cannot be emtpy")
+		return nil, fmt.Errorf("realm cannot be emtpy")
 	}
 	if strings.TrimSpace(credentials.ConsumerKey) == "" {
-		return &Client{}, fmt.Errorf("Consumer key cannot be emtpy")
+		return nil, fmt.Errorf("consumer key cannot be emtpy")
 	}
 	if strings.TrimSpace(credentials.ConsumerSecrect) == "" {
-		return &Client{}, fmt.Errorf("Consumer secrect cannot be emtpy")
+		return nil, fmt.Errorf("consumer secrect cannot be emtpy")
 	}
 	if strings.TrimSpace(credentials.Email) == "" {
-		return &Client{}, fmt.Errorf("email cannot be emtpy")
+		return nil, fmt.Errorf("email cannot be emtpy")
 	}
 	if strings.TrimSpace(credentials.Password) == "" {
-		return &Client{}, fmt.Errorf("password cannot be emtpy")
+		return nil, fmt.Errorf("password cannot be emtpy")
 	}
 
 	// create base client default to http
@@ -352,36 +358,27 @@ func NewClientFromFile(filePath string, debug bool) (*Client, error) {
 
 	accessToken, err := c.getAccessToken(debug)
 	if err != nil {
-		return &Client{}, fmt.Errorf("Access token could not be generated:\n %v", err)
+		return nil, fmt.Errorf("access token could not be generated:\n %v", err)
 	}
 
 	// create a cookie jar to add the access token to
 	if debug {
-		log.Info("Creating cookiejar")
+		log.Info("creating cookiejar")
 	}
 	cj, err := cookiejar.New(nil)
 	if err != nil {
-		return &Client{}, fmt.Errorf("Cookiejar could not be created %v", err)
+		return nil, fmt.Errorf("cookiejar could not be created %v", err)
 	}
 
-	// clean up entered domain just incase user passes in a domain in a way I'm not ready for
-	r := strings.NewReplacer(
-		"www.", "",
-		"http://", "",
-		"https://", "",
-		"//", "",
-		"/", "",
-	)
-
-	c.domain = r.Replace(c.domain)
+	c.domain = domainReplacer.Replace(c.domain)
 	// format the domain
 	base, err := url.Parse(fmt.Sprintf("%s://www.%s", c.scheme, c.domain))
 	if err != nil {
-		return &Client{}, fmt.Errorf("Domain could not be parsed to type url %v", err)
+		return nil, fmt.Errorf("domain could not be parsed to type url %v", err)
 	}
 
 	if debug {
-		log.Info("Setting openx3_access_token in cookie jar")
+		log.Info("setting openx3_access_token in cookie jar")
 	}
 	// create auth cookie
 	var cookies []*http.Cookie
@@ -398,11 +395,11 @@ func NewClientFromFile(filePath string, debug bool) (*Client, error) {
 
 	// create authenticated session
 	if debug {
-		log.Info("Creating oauth1 session")
+		log.Info("creating oauth1 session")
 	}
 	session, err := consumer.MakeHttpClient(accessToken)
 	if err != nil {
-		return &Client{}, fmt.Errorf("Could not create client %v", err)
+		return nil, fmt.Errorf("Could not create client %v", err)
 	}
 	session.Jar = cj
 	c.session = session
@@ -439,12 +436,12 @@ func CreateConfigFileTemplate(fileCreationPath string) string {
 
 	f, err := os.Create(fileCreationPath)
 	if err != nil {
-		log.Fatalf("Could not create the file:\n %v", err)
+		log.Fatalf("could not create the file:\n %v", err)
 	}
 	defer f.Close()
 	_, err = f.WriteString(configFile)
 	if err != nil {
-		log.Fatalf("Could not write data to %s:\n %v", fileCreationPath, err)
+		log.Fatalf("could not write data to %s:\n %v", fileCreationPath, err)
 	}
 	log.Infof("File was created: %s\n", fileCreationPath)
 	return fileCreationPath
