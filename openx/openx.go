@@ -61,7 +61,10 @@ type Client struct {
 // Get is simailiar to the normal Go *http.client.Get,
 // except string parameters can be passed in the url or the as a map[string]interface{}
 func (c *Client) Get(url string, urlParms map[string]interface{}) (res *http.Response, err error) {
-	url = c.resolveURL(url)
+	url, err = c.resolveURL(url)
+	if err != nil {
+		return
+	}
 	if urlParms != nil {
 		p := "?"
 		for key, value := range urlParms {
@@ -88,9 +91,13 @@ func (c *Client) Get(url string, urlParms map[string]interface{}) (res *http.Res
 
 // Delete creates a delete request
 func (c *Client) Delete(url string, data io.Reader) (res *http.Response, err error) {
-	request, err := http.NewRequest("DELETE", c.resolveURL(url), data)
+	url, err = c.resolveURL(url)
 	if err != nil {
-		log.Fatalf("Could not create DELETE requests: %v", err)
+		return
+	}
+	request, err := http.NewRequest("DELETE", url, data)
+	if err != nil {
+		return nil, fmt.Errorf("Could not create DELETE requests: %v", err)
 	}
 	res, err = c.session.Do(request)
 	return
@@ -101,13 +108,21 @@ func (c *Client) Options(url string) (res *http.Response, err error) {
 	if !strings.Contains(url, "/options") {
 		url = path.Join("/options", url)
 	}
-	res, err = c.session.Get(c.resolveURL(url))
+	url, err = c.resolveURL(url)
+	if err != nil {
+		return
+	}
+	res, err = c.session.Get(url)
 	return
 }
 
 // Put creates a put request
 func (c *Client) Put(url string, data io.Reader) (res *http.Response, err error) {
-	request, err := http.NewRequest("PUT", c.resolveURL(url), data)
+	url, err = c.resolveURL(url)
+	if err != nil {
+		return
+	}
+	request, err := http.NewRequest("PUT", url, data)
 	if err != nil {
 		return nil, fmt.Errorf("could not create PUT request: %v", err)
 	}
@@ -117,13 +132,21 @@ func (c *Client) Put(url string, data io.Reader) (res *http.Response, err error)
 
 // Post is a wrapper for the basic Go *http.client.Post, however content type is automatically set to application/json
 func (c *Client) Post(url string, data io.Reader) (res *http.Response, err error) {
-	res, err = c.session.Post(c.resolveURL(url), "application/json", data)
+	url, err = c.resolveURL(url)
+	if err != nil {
+		return
+	}
+	res, err = c.session.Post(url, "application/json", data)
 	return
 }
 
 // PostForm is a wrapper for the basic Go *http.client.PostForm
 func (c *Client) PostForm(url string, data url.Values) (res *http.Response, err error) {
-	res, err = c.session.PostForm(c.resolveURL(url), data)
+	url, err = c.resolveURL(url)
+	if err != nil {
+		return
+	}
+	res, err = c.session.PostForm(url, data)
 	return
 }
 
@@ -134,10 +157,10 @@ func (c *Client) LogOff() (res *http.Response, err error) {
 	return
 }
 
-func (c *Client) resolveURL(endpoint string) (u string) {
+func (c *Client) resolveURL(endpoint string) (u string, err error) {
 	rawURL, err := url.Parse(endpoint)
 	if err != nil {
-		log.Fatalln("Could not parse endpoint: %v", err)
+		return "", fmt.Errorf("Could not parse endpoint: %v", err)
 	}
 	if rawURL.Scheme == "" {
 		u = fmt.Sprintf("%s://", c.scheme) + path.Join(c.domain, c.apiPath, rawURL.Path)
