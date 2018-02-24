@@ -5,7 +5,7 @@
   branch = "master"
   name = "github.com/mrjones/oauth"
   packages = ["."]
-  revision = "3f67d9c274355678b2f9844b08d643e2f9213340"
+  revision = "78d64468d6ec7b74e4b0d47cf61b4f4e288b944b"
 
 [[projects]]
   name = "github.com/pkg/errors"
@@ -22,6 +22,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "242d8bbcf5276124e8c5c2266249448e2aadd80fddc662450d7a8a7f26a7b922"
+  inputs-digest = "e434528e13d1176b155c8533e31185261c0bb88da46a4890109d3c46440671c0"
   solver-name = "gps-cdcl"
   solver-version = 1

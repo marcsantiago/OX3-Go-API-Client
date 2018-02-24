@@ -56,22 +56,22 @@ type Credentials struct {
 
 func (c Credentials) validate() error {
 	if strings.TrimSpace(c.Domain) == "" {
-		return fmt.Errorf("domain cannot be emtpy")
+		return errors.New("domain cannot be emtpy")
 	}
 	if strings.TrimSpace(c.Realm) == "" {
-		return fmt.Errorf("realm cannot be emtpy")
+		return errors.New("realm cannot be emtpy")
 	}
 	if strings.TrimSpace(c.ConsumerKey) == "" {
-		return fmt.Errorf("consumer key cannot be emtpy")
+		return errors.New("consumer key cannot be emtpy")
 	}
 	if strings.TrimSpace(c.ConsumerSecrect) == "" {
-		return fmt.Errorf("consumer secrect cannot be emtpy")
+		return errors.New("consumer secrect cannot be emtpy")
 	}
 	if strings.TrimSpace(c.Email) == "" {
-		return fmt.Errorf("email cannot be emtpy")
+		return errors.New("email cannot be emtpy")
 	}
 	if strings.TrimSpace(c.Password) == "" {
-		return fmt.Errorf("password cannot be emtpy")
+		return errors.New("password cannot be emtpy")
 	}
 	return nil
 }
