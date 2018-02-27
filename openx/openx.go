@@ -212,7 +212,6 @@ func (c *Client) Get(url string, urlParms map[string]interface{}) (*http.Respons
 		}
 		url += p[:len(p)-1]
 	}
-
 	return c.session.Get(url)
 }
 
@@ -279,18 +278,17 @@ func (c *Client) LogOff() (res *http.Response, err error) {
 }
 
 func (c *Client) formatURL(endpoint string) (string, error) {
-	var URL string
-
+	var uri string
 	rawURL, err := url.Parse(endpoint)
 	if err != nil {
-		return URL, err
+		return uri, err
 	}
-
+	p := strings.TrimLeft(rawURL.Path, "/")
 	if rawURL.Scheme == "" {
-		URL = fmt.Sprintf("%s://", c.scheme) + path.Join(c.domain, c.apiPath, rawURL.Path)
+		uri = fmt.Sprintf("%s://", c.scheme) + path.Join(c.domain, c.apiPath, p)
 	}
 
-	return URL, nil
+	return uri, nil
 }
 
 func (c *Client) getAccessToken(debug bool) (*oauth.AccessToken, error) {
