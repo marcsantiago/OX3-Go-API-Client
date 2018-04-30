@@ -122,6 +122,10 @@ func NewClient(creds Credentials, debug bool) (*Client, error) {
 		return nil, errors.Wrap(err, "Access token could not be generated")
 	}
 
+	if accessToken == nil {
+		return nil, fmt.Errorf("access token is nil")
+	}
+
 	// create a cookie jar to add the access token to
 	log.Trace(logKey, "Creating cookiejar")
 
@@ -333,6 +337,11 @@ func (c *Client) getAccessToken(debug bool) (*oauth.AccessToken, error) {
 	if _, ok := authInfo["oauth_verifier"]; !ok {
 		return nil, errors.Wrap(err, "oauth_verifier key not in response")
 	}
+
+	if len(authInfo["oauth_verifier"]) == 0 {
+		return nil, errors.Wrap(err, "oauth_verifier is empty")
+	}
+
 	oauthVerifier = authInfo["oauth_verifier"][0]
 
 	// use oauth_verifier to get access_token
