@@ -3,25 +3,35 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:aa9d2cd5ce31eb9cfec730f15a61a0153bd9837f3c3ed8e43776f1ecceda322c"
   name = "github.com/mrjones/oauth"
   packages = ["."]
-  revision = "78d64468d6ec7b74e4b0d47cf61b4f4e288b944b"
+  pruneopts = "UT"
+  revision = "f4e24b6d100c9436cbfe5d439581653d455490e7"
 
 [[projects]]
+  digest = "1:40e195917a951a8bf867cd05de2a46aaf1806c50cf92eebf4c16f78cd196f747"
   name = "github.com/pkg/errors"
   packages = ["."]
+  pruneopts = "UT"
   revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
   version = "v0.8.0"
 
 [[projects]]
+  digest = "1:88d453cd48ad8866bc0ba780472a283601d980458d304a4d5a9cdfbb5cadd2d1"
   name = "github.com/timehop/golog"
   packages = ["log"]
+  pruneopts = "UT"
   revision = "f7b5bd986a7714f2a31bfe9f234ccf942af2b16c"
   version = "v0.5"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "e434528e13d1176b155c8533e31185261c0bb88da46a4890109d3c46440671c0"
+  input-imports = [
+    "github.com/mrjones/oauth",
+    "github.com/pkg/errors",
+    "github.com/timehop/golog/log",
+  ]
   solver-name = "gps-cdcl"
   solver-version = 1
