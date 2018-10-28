@@ -321,31 +321,18 @@ func (c *Client) getAccessToken(debug bool) (*oauth.AccessToken, error) {
 		return nil, errors.Wrapf(err, "Couldn't get authorization status returned: %d", resp.StatusCode)
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
+	io.Copy(ioutil.Discard, resp.Body)
 
-	// parse the response, should contain oauth_verifier
-	raw, err := url.Parse(string(body))
-	if err != nil {
-		return nil, err
-	}
-
-	authInfo := raw.Query()
-	var oauthVerifier string
-	if _, ok := authInfo["oauth_verifier"]; !ok {
-		return nil, errors.Wrap(err, "oauth_verifier key not in response")
-	}
-
-	if len(authInfo["oauth_verifier"]) == 0 {
+	// parse the header, should contain oauth_verifier
+	oauthVerifier := resp.Header.Get("oauth_verifier")
+	if len(oauthVerifier) == 0 {
+		log.Trace(logKey, "oauth_verifier is empty")
 		return nil, errors.Wrap(err, "oauth_verifier is empty")
 	}
 
-	oauthVerifier = authInfo["oauth_verifier"][0]
-
 	// use oauth_verifier to get access_token
 	accessToken, err := consumer.AuthorizeToken(requestToken, oauthVerifier)
+	log.Trace(logKey, "logging token response", "token", accessToken, "err", err)
 	if err != nil {
 		return nil, err
 	}
