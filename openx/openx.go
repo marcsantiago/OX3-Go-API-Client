@@ -35,11 +35,11 @@ var (
 )
 
 const (
-	version          = "1.0.0"
+	version          = "2.0.0"
 	requestTokenURL  = "https://sso.openx.com/api/index/initiate"
 	accessTokenURL   = "https://sso.openx.com/api/index/token"
 	authorizationURL = "https://sso.openx.com/login/process"
-	apiPath          = "/ox/4.0/"
+	apiPath          = "/data/1.0/"
 	callBack         = "oob"
 	logKey           = "Openx-Package"
 )
